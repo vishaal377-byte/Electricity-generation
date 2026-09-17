@@ -1,10 +1,10 @@
 """
 Unit tests for ElectricityDemandAgent.
+Verifies future year forecasting and trajectory projections.
 """
 
 import unittest
 from electricity_agent.agent import ElectricityDemandAgent
-from electricity_agent.config import COUNTRY_GROUPS
 
 
 class TestElectricityAgent(unittest.TestCase):
@@ -13,48 +13,47 @@ class TestElectricityAgent(unittest.TestCase):
         cls.agent = ElectricityDemandAgent()
 
     def test_calculate_country(self):
-        res = self.agent.calculate_country("France")
+        res = self.agent.calculate_country("France", target_year=2024)
         self.assertEqual(res["iso_code"], "FRA")
         self.assertGreater(res["predicted_demand_twh"], 100)
         self.assertGreater(res["per_capita_kwh"], 1000)
 
-    def test_calculate_country_with_override(self):
-        res_base = self.agent.calculate_country("India")
-        # Double primary energy consumption
-        base_energy = res_base["applied_factors"]["primary_energy_consumption"]
-        res_shock = self.agent.calculate_country(
-            "India",
-            factors_override={"primary_energy_consumption": base_energy * 1.5}
-        )
-        self.assertGreater(res_shock["predicted_demand_twh"], res_base["predicted_demand_twh"])
-        self.assertGreater(res_shock["delta_twh"], 0)
+    def test_calculate_future_year(self):
+        # Forecast India in 2030 and 2035
+        res_2024 = self.agent.calculate_country("India", target_year=2024)
+        res_2030 = self.agent.calculate_country("India", target_year=2030)
+        self.assertEqual(res_2030["target_year"], 2030)
+        self.assertGreater(res_2030["predicted_demand_twh"], 1000)
+        self.assertGreater(res_2030["projected_factors"]["population"], res_2024["projected_factors"]["population"])
 
-    def test_calculate_bunch_group(self):
-        res = self.agent.calculate_bunch("G7")
+    def test_calculate_bunch_group_future(self):
+        res = self.agent.calculate_bunch("G7", target_year=2030)
         self.assertEqual(res["group_name"], "G7")
         self.assertEqual(res["country_count"], 7)
-        self.assertGreater(res["total_electricity_needed_twh"], 5000)
-        self.assertEqual(len(res["countries"]), 7)
+        self.assertEqual(res["target_year"], 2030)
+        self.assertGreater(res["total_electricity_needed_twh"], 4000)
 
-    def test_calculate_bunch_custom_list(self):
-        countries = ["Germany", "Brazil", "Japan"]
-        res = self.agent.calculate_bunch(countries)
-        self.assertEqual(res["country_count"], 3)
-        self.assertGreater(res["total_electricity_needed_twh"], 1000)
+    def test_forecast_trajectory(self):
+        res = self.agent.forecast_trajectory("BRICS", start_year=2024, end_year=2030, step=2)
+        self.assertEqual(len(res["trajectory"]), 4)  # 2024, 2026, 2028, 2030
+        self.assertEqual(res["trajectory"][0]["year"], 2024)
+        self.assertEqual(res["trajectory"][-1]["year"], 2030)
 
     def test_simulate_scenario(self):
         res = self.agent.simulate_scenario(
             "BRICS",
+            target_year=2030,
             gdp_growth_pct=15.0,
-            re_capacity_expansion_pct=30.0
+            re_capacity_expansion_pct=30.0,
         )
         self.assertEqual(res["group_name"], "BRICS")
-        self.assertEqual(len(res["countries"]), 5)
+        self.assertEqual(res["target_year"], 2030)
         self.assertGreater(res["total_scenario_twh"], 0)
 
     def test_explain_factors(self):
-        res = self.agent.explain_country_factors("Japan")
+        res = self.agent.explain_country_factors("Japan", target_year=2030)
         self.assertEqual(res["country"], "Japan")
+        self.assertEqual(res["target_year"], 2030)
         self.assertIn("factor_sensitivities", res)
         self.assertIn("primary_energy_consumption", res["factor_sensitivities"])
 

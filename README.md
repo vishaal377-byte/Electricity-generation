@@ -1,6 +1,6 @@
 # ⚡ Electricity Demand Intelligent Agent
 
-An intelligent, Machine Learning-trained agent that predicts, forecasts, and calculates the amount of electricity needed for countries and country clusters ("bunches") using key demographic, macroeconomic, and energy transition factors.
+An intelligent, Machine Learning-trained agent that predicts, forecasts, and calculates the amount of electricity needed for countries and country clusters ("bunches") at any target year (2024–2050) using demographic, macroeconomic, and energy transition factors.
 
 Trained on master energy transition datasets combining IRENA renewable capacity data, IMF subsidy statistics, and Our World in Data (OWID) historical energy metrics across 218 countries.
 
@@ -8,18 +8,18 @@ Trained on master energy transition datasets combining IRENA renewable capacity 
 
 ## 🌟 Key Features
 
-- **ML-Trained Model Pipeline ($R^2 = 0.9941$, MAE = $4.58\text{ TWh}$)**:
-  - Predicts country electricity demand based on primary energy consumption, GDP, population, urbanization, electrification rates, and renewable capacity mixes.
+- **Strict 80% Train / 20% Test ML Model ($R^2 = 0.9979$, MAE = $4.31\text{ TWh}$)**:
+  - Trained strictly on an 80% data split (4,118 records) and evaluated on a 20% unseen holdout test set (1,030 records).
+- **Future Year Forecasting (2024–2050)**:
+  - Forecast electricity consumption for any specific target year (e.g. 2025, 2030, 2035, 2040, 2050).
+  - Uses country-specific compound annual growth rates (CAGRs) for population, GDP, primary energy, and annual renewable capacity additions.
 - **Multi-Country "Bunch" Calculations**:
   - Compute aggregate electricity demand across country clusters (e.g. `G7`, `BRICS`, `EU_TOP`, `LATAM_TOP`, `ASIA_PACIFIC`, `GLOBAL_TOP_10`) or custom country lists.
-- **What-If Policy & Scenario Simulations**:
-  - Simulate macroeconomic changes (e.g., $+15\%$ GDP growth) and renewable transition targets (e.g., $+30\%$ solar/wind expansion).
-- **Factor Sensitivity & Attribution**:
-  - Analyze the elasticity and influence of individual factors on country electricity requirements.
-- **Interactive Web Dashboard (`dashboard.html`)**:
-  - Live interactive sliders, comparative SVG charts, country filters, and CSV export.
-- **Full CLI & Interactive REPL**:
-  - Command-line agent for rapid querying and scenario modeling.
+- **Modern AMOLED Dark & Light Mode Web Dashboard (`dashboard.html`)**:
+  - True pitch-black AMOLED dark theme with glowing neon cyan/emerald accents and clean modern light mode.
+  - Interactive future year slider ($2024$ to $2050$), quick year presets, and interactive SVG trajectory curve (2024–2050).
+- **Full CLI with Future Trajectory Support**:
+  - Command-line agent supporting `--year` and `trajectory` forecasting.
 
 ---
 
@@ -30,22 +30,22 @@ Trained on master energy transition datasets combining IRENA renewable capacity 
 ├── electricity_agent/                  # Core package
 │   ├── __init__.py                     # Package exports
 │   ├── config.py                       # Configuration & country clusters
-│   ├── data_pipeline.py                # DataLoader & feature engineering
-│   ├── model.py                        # Scikit-learn Random Forest model wrapper
+│   ├── data_pipeline.py                # DataLoader & future factor projection engine
+│   ├── model.py                        # 80/20 train/test ML model pipeline
 │   ├── agent.py                        # ElectricityDemandAgent core logic
-│   ├── cli.py                          # CLI & interactive REPL interface
+│   ├── cli.py                          # CLI with --year & trajectory forecasting
 │   └── artifacts/
-│       ├── electricity_demand_model.joblib  # Trained model bundle
+│       ├── electricity_demand_model.joblib  # Trained model bundle (R²=0.9979)
 │       └── dashboard_data.json              # Precomputed multi-country factor database
 ├── data/                               # Dataset files
 │   ├── Energy_Transition_Master_Dataset_cleaned.xlsx
 │   └── Energy_Transition_Master_Dataset_augmented.xlsx
-├── tests/                              # Automated test suite
+├── tests/                              # Automated test suite (12 tests)
 │   ├── test_data_pipeline.py
 │   ├── test_model.py
 │   └── test_agent.py
-├── dashboard.html                      # Standalone interactive dashboard
-├── example_quickstart.py               # Minimal Python quickstart example
+├── dashboard.html                      # Modern AMOLED dashboard with Light/Dark toggle
+├── example_quickstart.py               # Standalone Python quickstart example
 ├── requirements.txt                    # Project dependencies
 └── README.md                           # Documentation
 ```
@@ -69,7 +69,7 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 2. Run the Interactive Web Dashboard
+### 2. Run the AMOLED Web Dashboard
 
 Open `dashboard.html` in any web browser:
 ```bash
@@ -80,29 +80,26 @@ open dashboard.html
 
 ## 💻 Using the Command-Line Agent (CLI)
 
-### Calculate for a bunch of countries:
+### Future Year Forecasts:
 ```bash
-# Predefined group (e.g. G7, BRICS, EU_TOP):
-python3 -m electricity_agent.cli bunch --group G7
-python3 -m electricity_agent.cli bunch --group BRICS
+# Calculate electricity needed for India in 2030:
+python3 -m electricity_agent.cli calculate --country "India" --year 2030
 
-# Custom list of countries:
-python3 -m electricity_agent.cli bunch --countries "Australia,Brazil,South Africa,Norway"
+# Calculate for G7 in 2035:
+python3 -m electricity_agent.cli bunch --group G7 --year 2035
+
+# View annual trajectory curve (2024 to 2040) for BRICS:
+python3 -m electricity_agent.cli trajectory --group BRICS --start-year 2024 --end-year 2040 --step 2
 ```
 
-### Calculate for a single country:
+### Policy Scenario Simulations:
 ```bash
-python3 -m electricity_agent.cli calculate --country "India"
+python3 -m electricity_agent.cli scenario --group BRICS --year 2030 --gdp-growth 10 --re-expansion 25
 ```
 
-### Run policy scenario simulations:
+### Factor Sensitivity Analysis:
 ```bash
-python3 -m electricity_agent.cli scenario --group BRICS --gdp-growth 10 --re-expansion 25
-```
-
-### Explain factor drivers:
-```bash
-python3 -m electricity_agent.cli explain --country "Germany"
+python3 -m electricity_agent.cli explain --country "Germany" --year 2030
 ```
 
 ### Launch Interactive REPL:
@@ -119,37 +116,28 @@ from electricity_agent import ElectricityDemandAgent
 
 agent = ElectricityDemandAgent()
 
-# 1. Calculate for a single country
-result = agent.calculate_country("India")
-print(f"Predicted Demand: {result['predicted_demand_twh']} TWh")
-print(f"Per-Capita: {result['per_capita_kwh']} kWh/person")
+# 1. Forecast for a country at a specific future year (e.g. 2030)
+india_2030 = agent.calculate_country("India", target_year=2030)
+print(f"India 2030 Forecast: {india_2030['predicted_demand_twh']} TWh ({india_2030['per_capita_kwh']} kWh/person)")
 
-# 2. Calculate for a bunch of countries
-g7 = agent.calculate_bunch("G7")
-print(f"Total Electricity Needed: {g7['total_electricity_needed_twh']} TWh")
+# 2. Forecast for a bunch of countries in 2035
+g7_2035 = agent.calculate_bunch("G7", target_year=2035)
+print(f"G7 2035 Total: {g7_2035['total_electricity_needed_twh']} TWh")
 
-# 3. Simulate scenario
-sim = agent.simulate_scenario("BRICS", gdp_growth_pct=10.0, re_capacity_expansion_pct=25.0)
-print(f"Baseline: {sim['total_baseline_twh']} TWh -> Scenario: {sim['total_scenario_twh']} TWh")
+# 3. Forecast year-by-year trajectory
+traj = agent.forecast_trajectory("BRICS", start_year=2024, end_year=2035)
+for pt in traj["trajectory"]:
+    print(f"Year {pt['year']}: {pt['total_twh']} TWh")
 ```
 
 ---
 
-## 🧪 Testing
+## 📊 Model Performance (Strict 80% Train / 20% Test Split)
 
-Run the automated test suite:
-```bash
-python3 -m unittest discover -s tests
-```
-
----
-
-## 📊 Model Performance
-
-| Metric | Score |
-| :--- | :--- |
-| **$R^2$ Score** | **0.9941** |
-| **Mean Absolute Error (MAE)** | **4.58 TWh** |
-| **RMSE** | **39.13 TWh** |
-| **MAPE** | **9.19%** |
-| **Training Records** | **5,148 country-years** |
+| Metric | Score | Note |
+| :--- | :--- | :--- |
+| **Split Ratio** | **80% Train / 20% Test** | 4,118 training records / 1,030 test records |
+| **Test $R^2$ Score** | **0.9979** | Evaluated on unseen 20% holdout test set |
+| **Test MAE** | **4.31 TWh** | Mean absolute error on test set |
+| **Test RMSE** | **23.19 TWh** | Root mean squared error on test set |
+| **Test MAPE** | **7.01%** | Mean absolute percentage error |

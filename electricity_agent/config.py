@@ -15,9 +15,16 @@ ARTIFACTS_DIR.mkdir(parents=True, exist_ok=True)
 CLEANED_DATASET_PATH = DATA_DIR / "Energy_Transition_Master_Dataset_cleaned.xlsx"
 AUGMENTED_DATASET_PATH = DATA_DIR / "Energy_Transition_Master_Dataset_augmented.xlsx"
 MODEL_BUNDLE_PATH = ARTIFACTS_DIR / "electricity_demand_model.joblib"
+DASHBOARD_DATA_PATH = ARTIFACTS_DIR / "dashboard_data.json"
 
-# Feature definitions for ML model
+# Forecasting Years
+DEFAULT_BASE_YEAR = 2024
+MIN_FORECAST_YEAR = 2024
+MAX_FORECAST_YEAR = 2050
+
+# Feature definitions for ML model (includes explicit temporal year factor)
 MODEL_FEATURES = [
+    "year",                          # Calendar year (temporal trend factor)
     "primary_energy_consumption",    # Total primary energy consumed (TWh)
     "population",                    # Country population
     "gdp",                           # Gross domestic product (USD)

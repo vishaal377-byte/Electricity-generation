@@ -1,14 +1,13 @@
 """
 Unit tests for ML model.
+Verifies 80% Train / 20% Test split and holdout evaluation.
 """
 
 import unittest
 from pathlib import Path
 import tempfile
-import pandas as pd
 from electricity_agent.data_pipeline import DataLoader
 from electricity_agent.model import ElectricityModel
-from electricity_agent.config import MODEL_BUNDLE_PATH
 
 
 class TestModel(unittest.TestCase):
@@ -21,8 +20,9 @@ class TestModel(unittest.TestCase):
     def test_model_loaded_or_trained(self):
         self.assertTrue(self.is_loaded, "Model should be loaded from bundle")
         self.assertIsNotNone(self.model.model)
-        self.assertIn("r2_score", self.model.metrics)
-        self.assertGreaterEqual(self.model.metrics["r2_score"], 0.95)
+        self.assertIn("test_r2_score", self.model.metrics)
+        self.assertGreaterEqual(self.model.metrics["test_r2_score"], 0.95)
+        self.assertEqual(self.model.metrics["split_ratio"], "80% Train / 20% Test")
 
     def test_prediction_output(self):
         X, _, _ = self.loader.prepare_training_data()
@@ -40,6 +40,7 @@ class TestModel(unittest.TestCase):
             loaded = new_model.load()
             self.assertTrue(loaded)
             self.assertEqual(new_model.feature_names, self.model.feature_names)
+            self.assertEqual(new_model.metrics["split_ratio"], "80% Train / 20% Test")
 
 
 if __name__ == "__main__":

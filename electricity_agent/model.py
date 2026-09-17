@@ -1,15 +1,16 @@
 """
 ML Model training, evaluation, explainability, and inference pipeline.
+Enforces strict 80% Train / 20% Test split.
 """
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 import joblib
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import ExtraTreesRegressor, RandomForestRegressor
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error, r2_score, root_mean_squared_error
-from sklearn.model_selection import KFold, cross_val_predict
+from sklearn.model_selection import train_test_split
 
 from .config import MODEL_BUNDLE_PATH, MODEL_FEATURES, TARGET_COL
 
@@ -21,7 +22,7 @@ class ElectricityModel:
         self.model_path = model_path or MODEL_BUNDLE_PATH
         self.model: Optional[Any] = None
         self.feature_names: List[str] = list(MODEL_FEATURES)
-        self.metrics: Dict[str, float] = {}
+        self.metrics: Dict[str, Any] = {}
         self.feature_importances: Dict[str, float] = {}
         self.medians: Dict[str, float] = {}
 
@@ -30,14 +31,21 @@ class ElectricityModel:
         X: pd.DataFrame,
         y: pd.Series,
         medians: Optional[Dict[str, float]] = None,
+        test_size: float = 0.20,
         n_estimators: int = 150,
         random_state: int = 42,
-    ) -> Dict[str, float]:
+    ) -> Dict[str, Any]:
         """
-        Trains an ensemble Random Forest model and performs 5-fold cross-validation.
+        Trains the Random Forest model strictly using an 80% Train / 20% Test split.
+        Evaluates metrics on the unseen 20% holdout test dataset.
         """
         self.medians = medians or {}
         self.feature_names = list(X.columns)
+
+        # Strict 80% Train / 20% Test split
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, test_size=test_size, random_state=random_state
+        )
 
         # Regressor configuration
         self.model = RandomForestRegressor(
@@ -49,26 +57,34 @@ class ElectricityModel:
             random_state=random_state,
         )
 
-        # 5-fold Cross-Validation
-        kf = KFold(n_splits=5, shuffle=True, random_state=random_state)
-        cv_preds = cross_val_predict(self.model, X, y, cv=kf, n_jobs=-1)
+        # Train on 80% train set
+        self.model.fit(X_train, y_train)
 
-        r2 = float(r2_score(y, cv_preds))
-        mae = float(mean_absolute_error(y, cv_preds))
-        rmse = float(root_mean_squared_error(y, cv_preds))
-        non_zero = y > 0.05
-        mape = float(np.mean(np.abs((y[non_zero] - cv_preds[non_zero]) / y[non_zero])) * 100)
+        # Evaluate strictly on 20% unseen test set
+        test_preds = self.model.predict(X_test)
+        test_r2 = float(r2_score(y_test, test_preds))
+        test_mae = float(mean_absolute_error(y_test, test_preds))
+        test_rmse = float(root_mean_squared_error(y_test, test_preds))
+
+        non_zero = y_test > 0.05
+        test_mape = float(
+            np.mean(np.abs((y_test[non_zero] - test_preds[non_zero]) / y_test[non_zero])) * 100
+        )
+
+        # Also compute train metrics for completeness
+        train_preds = self.model.predict(X_train)
+        train_r2 = float(r2_score(y_train, train_preds))
 
         self.metrics = {
-            "r2_score": round(r2, 4),
-            "mae_twh": round(mae, 2),
-            "rmse_twh": round(rmse, 2),
-            "mape_pct": round(mape, 2),
-            "train_samples": int(len(X)),
+            "test_r2_score": round(test_r2, 4),
+            "test_mae_twh": round(test_mae, 2),
+            "test_rmse_twh": round(test_rmse, 2),
+            "test_mape_pct": round(test_mape, 2),
+            "train_r2_score": round(train_r2, 4),
+            "train_samples": int(len(X_train)),
+            "test_samples": int(len(X_test)),
+            "split_ratio": f"{int((1 - test_size) * 100)}% Train / {int(test_size * 100)}% Test",
         }
-
-        # Fit final model on all data
-        self.model.fit(X, y)
 
         # Calculate feature importances
         fi = self.model.feature_importances_
@@ -112,7 +128,6 @@ class ElectricityModel:
         if self.model is None:
             raise ValueError("Model is not trained or loaded.")
 
-        # Ensure all required features are present
         X_eval = X.copy()
         for f in self.feature_names:
             if f not in X_eval.columns:
@@ -122,7 +137,6 @@ class ElectricityModel:
 
         X_eval = X_eval[self.feature_names]
         preds = self.model.predict(X_eval)
-        # Demand cannot be negative
         return np.maximum(0.0, preds)
 
     def predict_single(self, feature_dict: Dict[str, float]) -> float:
