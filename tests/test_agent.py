@@ -57,6 +57,15 @@ class TestElectricityAgent(unittest.TestCase):
         self.assertIn("factor_sensitivities", res)
         self.assertIn("primary_energy_consumption", res["factor_sensitivities"])
 
+    def test_answer_prompt(self):
+        prompt = "What will electricity consumption be for India and Germany in 2035 with 10% GDP growth?"
+        res = self.agent.answer_prompt(prompt)
+        self.assertEqual(res["target_year"], 2035)
+        self.assertIn("India", res["countries"])
+        self.assertIn("Germany", res["countries"])
+        self.assertGreater(res["total_demand_twh"], 1000)
+        self.assertIn("In **2035**", res["answer"])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -10,6 +10,7 @@ import pandas as pd
 from .config import COUNTRY_GROUPS, DEFAULT_BASE_YEAR, MODEL_FEATURES
 from .data_pipeline import DataLoader
 from .model import ElectricityModel
+from .prompt_parser import PromptParser
 
 
 class ElectricityDemandAgent:
@@ -36,6 +37,8 @@ class ElectricityDemandAgent:
                 self.model.train(X, y, medians=self.loader.feature_medians, test_size=0.20)
                 self.model.save()
                 print("Model trained and saved successfully.")
+
+        self.parser = PromptParser(self.loader.get_all_countries())
 
     def retrain_model(self, test_size: float = 0.20) -> Dict[str, Any]:
         """Explicitly retrain the model with the given train/test split."""
@@ -389,3 +392,90 @@ class ElectricityDemandAgent:
             "predicted_demand_twh": round(base_demand, 2),
             "factor_sensitivities": sorted_sens,
         }
+
+    def answer_prompt(self, prompt: str) -> Dict[str, Any]:
+        """
+        Accepts a user natural language prompt (e.g. 'What will the electricity consumption of
+        India and Germany be in 2035 with 10% GDP growth?'), parses intent, calculates
+        forecasts with the ML model, and generates a conversational answer + data.
+        """
+        parsed = self.parser.parse(prompt)
+        countries = parsed["countries"]
+        target_year = parsed["target_year"]
+        gdp_growth = parsed["gdp_growth_pct"]
+        re_exp = parsed["re_expansion_pct"]
+        energy_growth = parsed["energy_growth_pct"]
+        pop_growth = parsed["pop_growth_pct"]
+        elec_target = parsed["electrification_target_pct"]
+
+        # Run scenario or bunch calculation
+        has_scenarios = any(
+            [gdp_growth != 0, re_exp != 0, energy_growth != 0, pop_growth != 0, elec_target is not None]
+        )
+
+        if has_scenarios:
+            results = self.simulate_scenario(
+                countries,
+                target_year=target_year,
+                gdp_growth_pct=gdp_growth,
+                pop_growth_pct=pop_growth,
+                primary_energy_growth_pct=energy_growth,
+                re_capacity_expansion_pct=re_exp,
+                target_electrification_pct=elec_target,
+            )
+            total_twh = results["total_scenario_twh"]
+            base_twh = results["total_baseline_twh"]
+            delta_twh = results["total_delta_twh"]
+            delta_pct = results["total_delta_pct"]
+            country_rows = results["countries"]
+        else:
+            results = self.calculate_bunch(countries, target_year=target_year)
+            total_twh = results["total_electricity_needed_twh"]
+            base_twh = results["total_baseline_twh"]
+            delta_twh = results["total_delta_twh"]
+            delta_pct = 0.0
+            country_rows = [
+                {
+                    "country": c["country"],
+                    "iso_code": c["iso_code"],
+                    "baseline_twh": c["baseline_predicted_twh"],
+                    "scenario_twh": c["predicted_demand_twh"],
+                    "delta_twh": c["delta_twh"],
+                    "delta_pct": c["delta_pct"],
+                    "per_capita_kwh": c["per_capita_kwh"],
+                    "re_capacity_mw": c["total_re_capacity_mw"],
+                }
+                for c in results["countries"]
+            ]
+
+        # Compose natural language answer
+        country_names = ", ".join(countries)
+        if len(countries) == 1:
+            c = country_rows[0]
+            answer = (
+                f"In **{target_year}**, the forecasted electricity demand for **{c['country']}** is "
+                f"**{c['scenario_twh']:,.2f} TWh** (approx. **{c['per_capita_kwh']:,.1f} kWh per person**)."
+            )
+            if has_scenarios:
+                answer += f" Under this scenario, demand shifts by **{delta_twh:+,.2f} TWh ({delta_pct:+.1f}%)** relative to baseline."
+        else:
+            answer = (
+                f"In **{target_year}**, the total forecasted electricity demand for the **{len(countries)} selected countries** "
+                f"({country_names}) is **{total_twh:,.2f} TWh**."
+            )
+            if has_scenarios:
+                answer += f" This reflects a net scenario adjustment of **{delta_twh:+,.2f} TWh ({delta_pct:+.1f}%)**."
+
+        return {
+            "prompt": prompt,
+            "answer": answer,
+            "target_year": target_year,
+            "countries": countries,
+            "parsed_parameters": parsed,
+            "total_demand_twh": total_twh,
+            "baseline_demand_twh": base_twh,
+            "delta_twh": delta_twh,
+            "delta_pct": delta_pct,
+            "country_breakdown": country_rows,
+        }
+

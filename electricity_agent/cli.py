@@ -337,6 +337,10 @@ def main():
     # groups
     subparsers.add_parser("list-groups", help="List predefined country groups")
 
+    # prompt (natural language)
+    prompt_cmd = subparsers.add_parser("prompt", help="Ask a question or scenario in plain English")
+    prompt_cmd.add_argument("query", nargs="+", help="Natural language prompt")
+
     # interactive
     subparsers.add_parser("interactive", help="Start interactive agent REPL")
 
@@ -348,7 +352,22 @@ def main():
 
     agent = ElectricityDemandAgent()
 
-    if args.command == "calculate":
+    if args.command == "prompt":
+        user_query = " ".join(args.query)
+        res = agent.answer_prompt(user_query)
+        print(f"\n💬 Query: \"{user_query}\"")
+        print("=" * 80)
+        print(f"🤖 Agent Response:\n{res['answer']}\n")
+        headers = ["Country", "ISO3", f"Demand {res['target_year']} (TWh)", "Delta (TWh)", "Per Capita (kWh)"]
+        rows = [
+            [c["country"], c["iso_code"], format_number(c["scenario_twh"]), f"{c['delta_twh']:+,.2f}", format_number(c["per_capita_kwh"], 1)]
+            for c in res["country_breakdown"]
+        ]
+        print(tabulate(rows, headers=headers, tablefmt="rounded_grid"))
+        print("-" * 80)
+        print(f"Total Forecasted: {format_number(res['total_demand_twh'])} TWh")
+
+    elif args.command == "calculate":
         handle_calculate(agent, args)
     elif args.command == "bunch":
         handle_bunch(agent, args)

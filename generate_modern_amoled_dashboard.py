@@ -1,5 +1,6 @@
 """
-Generate ultra-modern AMOLED Dark/Light mode dashboard with future year forecasting.
+Generate ultra-modern AMOLED Dark/Light mode dashboard with future year forecasting
+AND natural language AI prompt text bar.
 """
 
 import json
@@ -19,7 +20,6 @@ html_content = f"""<!DOCTYPE html>
   <title>⚡ Electricity Demand Intelligent Agent — Future Forecasting</title>
   <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
   <style>
-    /* AMOLED & Modern Aesthetics */
     :root {{
       --bg: #f8fafc;
       --card-bg: #ffffff;
@@ -64,10 +64,6 @@ html_content = f"""<!DOCTYPE html>
       border-color: #2a2a32;
     }}
 
-    .glow-cyan {{
-      box-shadow: 0 0 20px rgba(0, 240, 255, 0.2);
-    }}
-
     /* Custom range slider */
     input[type=range] {{
       -webkit-appearance: none;
@@ -108,13 +104,13 @@ html_content = f"""<!DOCTYPE html>
         </div>
         <div>
           <div class="flex items-center gap-2">
-            <h1 class="text-xl sm:text-2xl font-bold tracking-tight">Electricity Demand Agent</h1>
+            <h1 class="text-xl sm:text-2xl font-bold tracking-tight">Electricity Demand Intelligent Agent</h1>
             <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
               Future Forecasting 2024–2050
             </span>
           </div>
           <p class="text-xs text-[var(--text-muted)] mt-0.5">
-            Machine Learning Model strictly trained on 80% data & tested on 20% holdout (R²: 0.9979, MAE: 4.31 TWh)
+            Strict 80% Train / 20% Holdout Test ML Model (R²: 0.9979, MAE: 4.31 TWh)
           </p>
         </div>
       </div>
@@ -133,6 +129,69 @@ html_content = f"""<!DOCTYPE html>
         </button>
       </div>
     </header>
+
+    <!-- NATURAL LANGUAGE AI PROMPT BAR (USER INPUT FEATURE) -->
+    <section class="amoled-card rounded-2xl p-5 shadow-sm border border-cyan-500/30 relative overflow-hidden space-y-3">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">🤖</span>
+          <h2 class="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-2">
+            <span>Natural Language AI Prompt</span>
+            <span class="text-[10px] font-normal text-[var(--text-muted)]">(Type any question, country group, or scenario)</span>
+          </h2>
+        </div>
+        <span class="text-[10px] font-mono text-[var(--text-muted)]">Press Enter or click Ask</span>
+      </div>
+
+      <div class="flex flex-col sm:flex-row items-center gap-3">
+        <div class="relative w-full">
+          <input type="text" id="ai-prompt-input"
+            placeholder="e.g. 'What will electricity demand be for India and China in 2035 with 15% GDP growth?'"
+            class="w-full px-4 py-3 text-sm rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] text-[var(--text)] focus:outline-none focus:border-cyan-400 font-medium pl-10 transition-all shadow-inner"
+            onkeydown="if(event.key==='Enter') executeAIPrompt()">
+          <span class="absolute left-3.5 top-3.5 text-cyan-400 text-sm">✨</span>
+        </div>
+        <button onclick="executeAIPrompt()"
+          class="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 via-teal-400 to-emerald-400 text-black font-bold text-xs uppercase tracking-wider hover:opacity-95 active:scale-95 transition-all shadow-lg shrink-0 flex items-center justify-center gap-2">
+          <span>Ask Agent</span>
+          <span>➔</span>
+        </button>
+      </div>
+
+      <!-- Quick Suggestion Chips -->
+      <div class="flex flex-wrap items-center gap-2 pt-1 text-xs">
+        <span class="text-[var(--text-muted)] font-medium">Examples:</span>
+        <button onclick="fillPrompt('Forecast electricity for India and China in 2035')"
+          class="px-2.5 py-1 rounded-lg border border-[var(--card-border)] hover:border-cyan-500 text-[var(--text-muted)] hover:text-cyan-400 transition-all">
+          "India & China in 2035"
+        </button>
+        <button onclick="fillPrompt('Show electricity for G7 in 2030 with 20% renewable expansion')"
+          class="px-2.5 py-1 rounded-lg border border-[var(--card-border)] hover:border-cyan-500 text-[var(--text-muted)] hover:text-cyan-400 transition-all">
+          "G7 in 2030 with +20% renewables"
+        </button>
+        <button onclick="fillPrompt('What is the consumption for BRICS in 2040 with 10% GDP growth?')"
+          class="px-2.5 py-1 rounded-lg border border-[var(--card-border)] hover:border-cyan-500 text-[var(--text-muted)] hover:text-cyan-400 transition-all">
+          "BRICS in 2040 (+10% GDP)"
+        </button>
+        <button onclick="fillPrompt('Predict electricity for France and Germany in 2050')"
+          class="px-2.5 py-1 rounded-lg border border-[var(--card-border)] hover:border-cyan-500 text-[var(--text-muted)] hover:text-cyan-400 transition-all">
+          "France & Germany in 2050"
+        </button>
+        <button onclick="fillPrompt('Forecast Latin America in 2030 with 100% electrification')"
+          class="px-2.5 py-1 rounded-lg border border-[var(--card-border)] hover:border-cyan-500 text-[var(--text-muted)] hover:text-cyan-400 transition-all">
+          "LatAm in 2030 (100% electrified)"
+        </button>
+      </div>
+
+      <!-- AI Response Output Box -->
+      <div id="ai-response-box" class="mt-2 p-4 rounded-xl border border-cyan-500/25 bg-cyan-500/5 text-xs space-y-2 hidden">
+        <div class="flex items-center justify-between text-cyan-400 font-bold">
+          <span class="flex items-center gap-1.5 text-sm"><span>⚡</span> Agent Response & Output</span>
+          <span id="ai-response-badge" class="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300">Target Year 2035</span>
+        </div>
+        <p id="ai-response-text" class="text-sm font-medium text-[var(--text)] leading-relaxed"></p>
+      </div>
+    </section>
 
     <!-- FUTURE YEAR SELECTOR BAR (HERO COMPONENT) -->
     <section class="amoled-card rounded-2xl p-5 shadow-sm border border-cyan-500/25 relative overflow-hidden">
@@ -396,6 +455,117 @@ html_content = f"""<!DOCTYPE html>
     let selectedCountryNames = new Set(DATA.groups.G7 || ["United States", "China", "India"]);
     let currentResults = [];
 
+    // Natural Language Prompt Parser & Engine
+    function fillPrompt(text) {{
+      document.getElementById("ai-prompt-input").value = text;
+      executeAIPrompt();
+    }}
+
+    function executeAIPrompt() {{
+      const prompt = document.getElementById("ai-prompt-input").value.trim();
+      if (!prompt) return;
+
+      const pLower = prompt.toLowerCase();
+
+      // 1. Extract Target Year (2020 to 2050)
+      const yrMatch = prompt.match(/\\b(20[2-5][0-9])\\b/);
+      let detectedYear = yrMatch ? parseInt(yrMatch[1]) : targetYear;
+
+      // 2. Extract Predefined Groups
+      let detectedGroup = null;
+      for (const gKey of Object.keys(DATA.groups)) {{
+        const clean = gKey.toLowerCase().replace("_", " ");
+        if (pLower.includes(clean) || pLower.includes(gKey.toLowerCase())) {{
+          detectedGroup = gKey;
+          break;
+        }}
+      }}
+      if (!detectedGroup) {{
+        if (pLower.includes("g7")) detectedGroup = "G7";
+        else if (pLower.includes("brics")) detectedGroup = "BRICS";
+        else if (pLower.includes("eu") || pLower.includes("europe")) detectedGroup = "EU_TOP";
+        else if (pLower.includes("latam") || pLower.includes("latin america")) detectedGroup = "LATAM_TOP";
+        else if (pLower.includes("asia")) detectedGroup = "ASIA_PACIFIC";
+        else if (pLower.includes("global top") || pLower.includes("top 10")) detectedGroup = "GLOBAL_TOP_10";
+      }}
+
+      // 3. Extract Countries
+      let foundCountries = new Set();
+      if (detectedGroup && DATA.groups[detectedGroup]) {{
+        DATA.groups[detectedGroup].forEach(c => foundCountries.add(c));
+      }}
+
+      // Check all individual countries
+      DATA.countries.forEach(c => {{
+        const cLower = c.name.toLowerCase();
+        const isoLower = c.iso.toLowerCase();
+        const regex = new RegExp("\\\\b" + cLower + "\\\\b", "i");
+        const isoRegex = new RegExp("\\\\b" + isoLower + "\\\\b", "i");
+        if (regex.test(prompt) || isoRegex.test(prompt)) {{
+          foundCountries.add(c.name);
+        }}
+      }});
+
+      // Common country aliases
+      if (/\\b(usa|us|america)\\b/i.test(prompt)) foundCountries.add("United States");
+      if (/\\b(uk|britain)\\b/i.test(prompt)) foundCountries.add("United Kingdom");
+      if (/\\brussia\\b/i.test(prompt)) foundCountries.add("Russia");
+      if (/\\bsouth korea\\b/i.test(prompt)) foundCountries.add("South Korea");
+
+      // 4. Extract Factor Overrides (GDP, RE, Energy, Pop, Electrification)
+      let gdpAdj = 0;
+      const gdpM = pLower.match(/([+-]?\\d+(?:\\.\\d+)?)\\s*%\\s*(?:higher|more|growth)?\\s*gdp/) ||
+                   pLower.match(/gdp\\s*(?:growth|increase|change)?\\s*(?:of|by)?\\s*([+-]?\\d+(?:\\.\\d+)?)\\s*%/);
+      if (gdpM) gdpAdj = parseFloat(gdpM[1]);
+
+      let reAdj = 0;
+      const reM = pLower.match(/([+-]?\\d+(?:\\.\\d+)?)\\s*%\\s*(?:more|expansion|increase)?\\s*(?:renewable|re|solar|clean)/) ||
+                  pLower.match(/(?:renewable|re|solar|clean)\\s*(?:expansion|growth|increase)?\\s*(?:of|by)?\\s*([+-]?\\d+(?:\\.\\d+)?)\\s*%/);
+      if (reM) reAdj = parseFloat(reM[1]);
+      else if (pLower.includes("double renewable") || pLower.includes("double re")) reAdj = 100;
+
+      let elecTarget = 0;
+      const elecM = pLower.match(/(\\d+(?:\\.\\d+)?)\\s*%\\s*(?:electrification|electricity access)/);
+      if (elecM) elecTarget = parseFloat(elecM[1]);
+
+      // Apply detected changes to controls
+      if (foundCountries.size > 0) {{
+        selectedCountryNames = foundCountries;
+      }}
+
+      setYear(detectedYear);
+      document.getElementById("slider-gdp").value = gdpAdj;
+      document.getElementById("slider-re").value = reAdj;
+      document.getElementById("slider-elec").value = elecTarget;
+
+      updateSimulation();
+      renderCountryCheckboxes(document.getElementById("country-search").value);
+
+      // Build AI Natural Language Answer
+      const selCount = currentResults.length;
+      const totDemand = parseFloat(document.getElementById("kpi-total-demand").innerText.replace(/,/g, ""));
+      const cNames = currentResults.slice(0, 4).map(c => c.name).join(", ") + (selCount > 4 ? ` and ${{selCount - 4}} others` : "");
+
+      let answerHtml = "";
+      if (selCount === 1) {{
+        const c = currentResults[0];
+        answerHtml = `In <strong>${{detectedYear}}</strong>, the forecasted electricity demand for <strong>${{c.name}}</strong> is <strong class="text-cyan-400 font-mono">${{c.predicted.toLocaleString(undefined, {{maximumFractionDigits: 1}})}} TWh</strong> (approx. <span class="font-mono text-purple-400">${{Math.round(c.perCapita).toLocaleString()}} kWh</span> per person).`;
+        if (c.delta !== 0) {{
+          answerHtml += ` This represents a <strong class="${{c.delta >= 0 ? "text-emerald-400" : "text-amber-400"}} font-mono">${{c.delta >= 0 ? "+" : ""}}${{c.delta.toFixed(1)}} TWh (${{c.deltaPct >= 0 ? "+" : ""}}${{c.deltaPct.toFixed(1)}}%)</strong> shift relative to 2024 baseline.`;
+        }}
+      }} else {{
+        answerHtml = `In <strong>${{detectedYear}}</strong>, the combined electricity demand for <strong>${{selCount}} countries</strong> (${{cNames}}) is forecasted at <strong class="text-cyan-400 text-base font-mono">${{totDemand.toLocaleString()}} TWh</strong>.`;
+        if (gdpAdj !== 0 || reAdj !== 0) {{
+          answerHtml += ` Incorporating your scenario overrides (${{gdpAdj !== 0 ? `GDP: ${{gdpAdj >= 0 ? "+" : ""}}${{gdpAdj}}%, ` : ""}}${{reAdj !== 0 ? `Renewable Expansion: +${{reAdj}}%` : ""}}).`;
+        }}
+      }}
+
+      const resBox = document.getElementById("ai-response-box");
+      document.getElementById("ai-response-text").innerHTML = answerHtml;
+      document.getElementById("ai-response-badge").innerText = `Forecast Year ${{detectedYear}} • ${{selCount}} Countries Analyzed`;
+      resBox.classList.remove("hidden");
+    }}
+
     // Theme Management
     function initTheme() {{
       const saved = localStorage.getItem("theme");
@@ -412,7 +582,7 @@ html_content = f"""<!DOCTYPE html>
       const isDark = document.documentElement.classList.toggle("dark");
       localStorage.setItem("theme", isDark ? "dark" : "light");
       updateThemeButton(isDark);
-      updateSimulation(); // redraw SVG charts with theme colors
+      updateSimulation();
     }}
 
     function updateThemeButton(isDark) {{
@@ -428,7 +598,6 @@ html_content = f"""<!DOCTYPE html>
       document.getElementById("display-target-year").innerText = targetYear;
       document.querySelectorAll(".year-label").forEach(el => el.innerText = targetYear);
 
-      // Update pill styling
       document.querySelectorAll(".year-pill").forEach(pill => {{
         const pyr = parseInt(pill.getAttribute("data-yr"));
         if (pyr === targetYear) {{
@@ -532,7 +701,7 @@ html_content = f"""<!DOCTYPE html>
       updateSimulation();
     }}
 
-    // Future Simulation & Prediction Engine
+    // Simulation Engine
     function updateSimulation() {{
       const gdpShift = parseFloat(document.getElementById("slider-gdp").value);
       const reExp = parseFloat(document.getElementById("slider-re").value);
@@ -558,7 +727,6 @@ html_content = f"""<!DOCTYPE html>
         const cagr = c.cagr || {{ pop_cagr: 0.008, gdp_cagr: 0.025, pe_cagr: 0.015, re_add_mw_per_year: 500 }};
         const baseDemand = c.baseline_demand_twh;
 
-        // Future Growth Dynamics (Compound extrapolation over dt years)
         const effectivePopCAGR = cagr.pop_cagr + (popShift / 100) * 0.01;
         const effectiveGDPCAGR = cagr.gdp_cagr + (gdpShift / 100) * 0.01;
         const effectivePECAGR = cagr.pe_cagr + (energyShift / 100) * 0.01;
@@ -569,10 +737,8 @@ html_content = f"""<!DOCTYPE html>
         const reAdd = (cagr.re_add_mw_per_year * (1 + reExp / 100)) * dt;
         const reCap = c.re_capacity_mw + Math.max(0, reAdd);
 
-        // ML Demand Response: primary energy elasticity (~0.94) + GDP elasticity (~0.08)
         let growthMultiplier = Math.pow(1 + effectivePECAGR, dt * 0.94) * Math.pow(1 + effectiveGDPCAGR, dt * 0.08);
 
-        // Electrification boost if target access set
         if (minElec > 0 && c.electrification_pct < minElec) {{
           growthMultiplier *= (1 + ((minElec - c.electrification_pct) / 100) * 0.25);
         }}
@@ -624,7 +790,6 @@ html_content = f"""<!DOCTYPE html>
       renderTable(currentResults);
     }}
 
-    // Render Future Trajectory Chart (2024 to 2050)
     function renderTrajectoryChart(selected) {{
       const container = document.getElementById("trajectory-chart-container");
       if (selected.length === 0) {{
@@ -636,7 +801,6 @@ html_content = f"""<!DOCTYPE html>
       const gdpShift = parseFloat(document.getElementById("slider-gdp").value);
       const energyShift = parseFloat(document.getElementById("slider-energy").value);
 
-      // Calculate baseline and scenario points
       const baselinePoints = [];
       const scenarioPoints = [];
 
@@ -649,11 +813,9 @@ html_content = f"""<!DOCTYPE html>
           const cagr = c.cagr || {{ pop_cagr: 0.008, gdp_cagr: 0.025, pe_cagr: 0.015 }};
           const bDem = c.baseline_demand_twh;
 
-          // Baseline path
           const baseMult = Math.pow(1 + cagr.pe_cagr, dt * 0.94) * Math.pow(1 + cagr.gdp_cagr, dt * 0.08);
           baseSum += bDem * baseMult;
 
-          // Scenario path
           const effPE = cagr.pe_cagr + (energyShift / 100) * 0.01;
           const effGDP = cagr.gdp_cagr + (gdpShift / 100) * 0.01;
           const scenMult = Math.pow(1 + effPE, dt * 0.94) * Math.pow(1 + effGDP, dt * 0.08);
@@ -668,7 +830,6 @@ html_content = f"""<!DOCTYPE html>
       const minVal = Math.min(...allVals) * 0.95;
       const maxVal = Math.max(...allVals) * 1.05;
 
-      // Build SVG
       const w = 700;
       const h = 200;
       const padL = 60;
@@ -683,12 +844,10 @@ html_content = f"""<!DOCTYPE html>
 
       const baseD = makePath(baselinePoints);
       const scenD = makePath(scenarioPoints);
-
       const targetX = getX(targetYear);
 
       container.innerHTML = `
         <svg viewBox="0 0 ${{w}} ${{h}}" class="w-full h-full overflow-visible">
-          <!-- Grid Lines -->
           ${{[0.25, 0.5, 0.75, 1.0].map(pct => {{
             const yv = minVal + pct * (maxVal - minVal);
             const ypos = getY(yv);
@@ -698,18 +857,12 @@ html_content = f"""<!DOCTYPE html>
             `;
           }}).join("")}}
 
-          <!-- Year Axis Labels -->
           ${{years.map(yr => `
             <text x="${{getX(yr)}}" y="${{h - 10}}" fill="currentColor" fill-opacity="0.5" font-size="10" font-family="monospace" text-anchor="middle">${{yr}}</text>
           `).join("")}}
 
-          <!-- Baseline Curve -->
           <path d="${{baseD}}" fill="none" stroke="#00f0ff" stroke-width="2.5" stroke-dasharray="6,4" opacity="0.8"/>
-
-          <!-- Scenario Curve -->
           <path d="${{scenD}}" fill="none" stroke="#00ff9f" stroke-width="3"/>
-
-          <!-- Target Year Indicator Line -->
           <line x1="${{targetX}}" y1="${{padT}}" x2="${{targetX}}" y2="${{h - padB}}" stroke="#00f0ff" stroke-width="1.5" stroke-dasharray="2,2"/>
           <circle cx="${{targetX}}" cy="${{getY(scenarioPoints.find(p => p.year === targetYear)?.val || scenarioPoints[0].val)}}" r="5" fill="#00ff9f" stroke="#000000" stroke-width="2"/>
         </svg>
@@ -823,9 +976,8 @@ output_path = Path("/Users/vishaal/.gemini/antigravity/scratch/dashboard.html")
 with open(output_path, "w") as f:
     f.write(html_content)
 
-# Also copy to brain artifact directory
 brain_dashboard = Path("/Users/vishaal/.gemini/antigravity/brain/45547b13-905e-46ad-835f-c9e939cfee67/dashboard.html")
 with open(brain_dashboard, "w") as f:
     f.write(html_content)
 
-print(f"Generated AMOLED dashboard at {output_path} ({len(html_content)} bytes)")
+print(f"Generated AMOLED dashboard with Natural Language Prompt Bar at {output_path} ({len(html_content)} bytes)")
